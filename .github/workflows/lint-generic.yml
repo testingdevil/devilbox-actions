@@ -19,25 +19,25 @@ jobs:
           fetch-depth: 0
 
       - name: Lint Files
-        uses: john-ea/devilbox-actions/.github/workflows/shell-command-retry-action@master
+        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make lint-files
 
       - name: Lint Yaml
-        uses: john-ea/devilbox-actions/.github/workflows/shell-command-retry-action@master
+        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make lint-yaml
 
       - name: Lint JSON
-        uses: john-ea/devilbox-actions/.github/workflows/shell-command-retry-action@master
+        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make lint-json
 
       - name: Lint Bash
-        uses: john-ea/devilbox-actions/.github/workflows/shell-command-retry-action@master
+        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make lint-bash
