@@ -1,4 +1,4 @@
-name: Build multi-arch image
+name: Build multi-arch flavour image
 
 on:
   workflow_call:
@@ -22,6 +22,21 @@ on:
         description: 'The ref build matrix as JSON string (list of git refs to build/deploy).'
         required: false
         type: string
+      default_branch:
+        description: 'The default branch of this repository to fetch latest tags from.'
+        required: false
+        default: ${{ github.event.repository.default_branch }}
+        type: string
+      tag:
+        description: 'The name for the "latest" Docker tag.'
+        required: false
+        default: 'latest'
+        type: string
+      test:
+        description: 'The name for the "latest" Docker tag.'
+        required: false
+        default: true
+        type: boolean
     ###
     ### Secrets
     ###
@@ -100,6 +115,8 @@ jobs:
           echo 'can_deploy: ${{ inputs.can_deploy }} '
           echo 'matrix: ${{ inputs.matrix }} '
           echo 'refs: ${{ inputs.refs }} '
+          echo 'default_branch: ${{ inputs.default_branch }} '
+          echo 'tag: ${{ inputs.tag }} '
 
       - name: "[DEBUG] Determined Settings"
         shell: bash
@@ -147,6 +164,9 @@ jobs:
       - name: "[SETUP] Determine Docker tag"
         id: tag
         uses: john-ea/devilbox-actions/.github/actions/docker-tag-action@master
+        with:
+          latest_git_branch: ${{ inputs.default_branch }}
+          latest_docker_tag_name: ${{ inputs.tag }}
 
       # https://github.com/alpinelinux/docker-alpine/issues/98
       - name: "[SETUP] Fix Docker IP forwarding"
@@ -180,6 +200,7 @@ jobs:
         with:
           command: |
             make test NAME=${{ matrix.name }} VERSION="${{ matrix.version }}" FLAVOUR=${{ matrix.flavour }} ARCH=${{ matrix.arch }} TAG=${{ steps.tag.outputs.docker-tag }}
+        if: inputs.test
 
       # ------------------------------------------------------------
       # Deploy
@@ -230,6 +251,9 @@ jobs:
       - name: "[SETUP] Determine Docker tag"
         id: tag
         uses: john-ea/devilbox-actions/.github/actions/docker-tag-action@master
+        with:
+          latest_git_branch: ${{ inputs.default_branch }}
+          latest_docker_tag_name: ${{ inputs.tag }}
 
       - name: "[SETUP] Determine manifest arches"
         id: manifest
