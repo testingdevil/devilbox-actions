@@ -1,0 +1,74 @@
+---
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'upload-artifact-verify'
+description: "GitHub Action to upload an artifact and verify it worked by downloading it again to a temporary directory."
+author: 'cytopia'
+branding:
+  icon: 'code'
+  color: 'red'
+
+inputs:
+  name:
+    description: 'The artifact name.'
+    required: true
+  path:
+    description: 'The local file to upload.'
+    required: true
+  pre_command:
+    description: 'A bash command to execute before uploading the artifact (e.g.: to create the artifact)'
+    required: false
+    default: ''
+  post_command:
+    description: 'A bash command to execute after downloading the artifact (e.g.: to verify it is the desired file)'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Execute pre command
+      uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
+      with:
+        retries: 3
+        pause: 1
+        command: ${{ inputs.pre_command }}
+      if: ${{ inputs.pre_command != '' }}
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: error
+
+    - name: Create temporary directory
+      id: tmp-dir
+      shell: bash
+      run: |
+        DIRECTORY="$( mktemp -d )"
+        echo "path=${DIRECTORY}" >> $GITHUB_OUTPUT
+
+    - name: Download artifact (for verification)
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ steps.tmp-dir.outputs.path }}
+
+    - name: set placeholder
+      id: placeholder
+      shell: bash
+      run: |
+        COMMAND='${{ inputs.post_command }}'
+        REPLACE='${{ steps.tmp-dir.outputs.path }}/${{ inputs.name }}'
+        COMMAND="${COMMAND//\{\{download_path\}\}/${REPLACE}}"
+        echo "command=${COMMAND}" >> $GITHUB_OUTPUT
+      if: ${{ inputs.post_command != '' }}
+
+    - name: Execute post command
+      uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
+      with:
+        retries: 3
+        pause: 1
+        command: ${{ steps.placeholder.outputs.command }}
+      if: ${{ inputs.post_command != '' }}

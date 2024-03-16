@@ -1,0 +1,141 @@
+---
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'Git ref matrix action'
+description: "GitHub Action to create a stringified build matrix for branches and tags."
+author: 'cytopia'
+branding:
+  icon: 'code'
+  color: 'red'
+
+inputs:
+  repository_default_branch:
+    description: 'The default branch of this repository to fetch latest tags from. Default: master'
+    required: false
+    default: ${{ github.event.repository.default_branch }}
+  branches:
+    description: 'Comma separated list of branches to create build matrix for. Default: none'
+    required: false
+    default: ''
+  tags:
+    description: 'Comma separated list of tags to create build matrix for. Default: none'
+    required: false
+    default: ''
+  num_latest_tags:
+    description: 'Number of latest tags to add to build matrix. Default: 0'
+    required: false
+    default: '0'
+  disable_refs:
+    description: 'A string flag (0 or 1 or false or true) to disable refs alltogether and return an empty matrix and has_refs=false.'
+    required: false
+    default: 'false'
+
+outputs:
+  matrix:
+    description: "(string) Stringified JSON build matrix for defined git refs. (list of strings)"
+    value: ${{ steps.set-matrix.outputs.matrix }}
+  has_refs:
+    description: "(string) String flag ('true' or 'false') that tells if we have matrix (list not empty) refs or not (list empty)."
+    value: ${{ steps.set-matrix.outputs.has_refs }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: "[SETUP] Checkout repository's default branch"
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.repository_default_branch }}
+        fetch-depth: 0
+        path: .git-ref-matrix-action
+      if: ${{ (!inputs.disable_refs || inputs.disable_refs == 0 || inputs.disable_refs == '0' || inputs.disable_refs == 'false') && inputs.num_latest_tags > 0 }}
+
+    - name: "[SETUP] Build and Export Matrix"
+      id: set-matrix
+      shell: bash
+      run: |
+        if [ "${{ inputs.disable_refs }}" = "1" ] || [ "${{ inputs.disable_refs }}" = "true" ]; then
+          ###
+          ### Output matrix
+          ###
+          echo "matrix=[]"      >> $GITHUB_OUTPUT
+          echo "has_refs=false" >> $GITHUB_OUTPUT
+          echo "matrix=[]"
+          echo "has_refs=false"
+        else
+          ###
+          ### Convert comma separated branches and tags to newline separated
+          ###
+          BRANCHES="$( echo "${{ inputs.branches }}" | sed 's/,/\n/g' )"
+          TAGS="$( echo "${{ inputs.tags }}" | sed 's/,/\n/g' )"
+
+          echo "BRANCHES:"
+          echo "-------------------------"
+          echo "${BRANCHES}"
+          echo
+
+          echo "TAGS:"
+          echo "-------------------------"
+          echo "${TAGS}"
+          echo
+
+          ###
+          ### Get x number of latest tags of this repository (newline separated)
+          ###
+          if [ "${{ inputs.num_latest_tags }}" != "0" ]; then
+            LATEST_TAGS="$( cd .git-ref-matrix-action && git tag --sort=creatordate | tail -${{ inputs.num_latest_tags }} )"
+            rm -r .git-ref-matrix-action
+          else
+            LATEST_TAGS=''
+          fi
+
+          echo "LATEST_TAGS:"
+          echo "-------------------------"
+          echo "${LATEST_TAGS}"
+          echo
+
+          ###
+          ### All newline separated refs (and make unique in case of duplicated tags)
+          ###
+          REFS="$( printf "%s\n%s\n%s\n" "${BRANCHES}" "${TAGS}" "${LATEST_TAGS}" | grep -Ev '^$' || true | sort -u )"
+
+          echo "REFS:"
+          echo "-------------------------"
+          echo "${REFS}"
+          echo
+
+          ###
+          ### Create element double-quoted and comma separated string (has leading comma)
+          ###
+          JSON=''
+          while IFS= read -r line; do
+            if [ -n "${line}" ]; then
+              JSON="${JSON},$( printf '"%s"' "${line}" )"
+            fi
+          done <<< "${REFS}"
+
+          ###
+          ### Remove leading comma and encapsulate in square brackets
+          ###
+          JSON="$( printf '[%s]' "${JSON#,}" )"
+
+          ###
+          ### Set final output for 'matrix'
+          ###
+          echo "matrix=${JSON}" >> $GITHUB_OUTPUT
+
+          ###
+          ### Set 'has_refs'
+          ###
+          if [ "${JSON}" = "[]" ]; then
+            HAS_REFS="false"
+          else
+            HAS_REFS="true"
+          fi
+          echo "has_refs=${HAS_REFS}" >> $GITHUB_OUTPUT
+
+          ###
+          ### Output matrix
+          ###
+          echo "matrix=${JSON}"
+          echo "has_refs=${HAS_REFS}"
+        fi

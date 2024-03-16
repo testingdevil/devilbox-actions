@@ -1,0 +1,63 @@
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'Shell command retry action'
+description: "GitHub Action to repeatedly retry a shell command upon failure."
+author: 'cytopia'
+branding:
+  icon: 'code'
+  color: 'red'
+
+inputs:
+  retries:
+    description: 'How many times to retry on failure'
+    required: false
+    default: '10'
+  pause:
+    description: 'How many seconds to wait between retries'
+    required: false
+    default: '10'
+  command:
+    description: 'Shell command to execute'
+    required: true
+    default: 'true'
+  fail_command:
+    description: 'Shell command to execute on every failure of given command (The fail_command will always succeed via: || true)'
+    required: false
+    default: ''
+  workdir:
+    description: 'Switch to this working directory prior executing shell command'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: execute
+      shell: bash
+      run: |
+        retry() {
+          for n in $(seq ${RETRIES}); do
+            echo "[${n}/${RETRIES}] ${*}";
+            if eval "${*}"; then
+              echo "[SUCC] ${n}/${RETRIES}";
+              return 0;
+            fi;
+            if [ -n "${FAIL_COMMAND}" ]; then
+              echo "Executing fail command:";
+              echo "${FAIL_COMMAND}";
+              eval "${FAIL_COMMAND}" || true;
+            fi;
+            sleep ${PAUSE};
+            echo "[FAIL] ${n}/${RETRIES}";
+          done;
+          return 1;
+        }
+        if [ -n "${WORKDIR}" ]; then
+          cd "${WORKDIR}"
+        fi
+        retry ${COMMAND}
+      env:
+        RETRIES: ${{ inputs.retries }}
+        PAUSE: ${{ inputs.pause }}
+        COMMAND: ${{ inputs.command }}
+        WORKDIR: ${{ inputs.workdir }}
+        FAIL_COMMAND: ${{ inputs.fail_command }}
