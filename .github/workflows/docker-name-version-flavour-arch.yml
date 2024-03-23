@@ -182,7 +182,7 @@ jobs:
         uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
-            make docker-pull-base-image VERSION="${{ matrix.version }}" FLAVOUR=${{ matrix.flavour }} ARCH=${{ matrix.arch }}
+            make docker-pull-base-image NAME=${{ matrix.name }} VERSION="${{ matrix.version }}" FLAVOUR=${{ matrix.flavour }} ARCH=${{ matrix.arch }}
 
       - name: Build
         uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
