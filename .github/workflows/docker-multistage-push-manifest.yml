@@ -56,7 +56,7 @@ jobs:
   # -----------------------------------------------------------------------------------------------
   deploy:
     name: ${{ matrix.NAME }}-${{ matrix.VERSION }}-${{ inputs.stage }} ${{ matrix.REFS }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +83,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           image: tonistiigi/binfmt:latest
-          platforms: all
+          platforms: linux/amd64,linux/arm64
 
       - name: "[SETUP] Determine Docker tag"
         id: tag
