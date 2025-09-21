@@ -85,7 +85,7 @@ jobs:
 
       - name: "[SETUP] Determine Docker tag"
         id: tag
-        uses: john-ea/devilbox-actions/.github/actions/docker-tag-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/docker-tag-action@master
         with:
           latest_git_branch: ${{ inputs.default_branch }}
           latest_docker_tag_name: ${{ inputs.tag }}
@@ -108,12 +108,12 @@ jobs:
       ### Download and import previously built image
       ###
       - name: "[Artifact Load] Download previously built image"
-        uses: john-ea/devilbox-actions/.github/actions/download-artifact-retry-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/download-artifact-retry-action@master
         with:
           name: ${{ steps.set-artifact-name.outputs.curr }}
 
       - name: "[Artifact Load] Import previously built image"
-        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make load INFILE=${{ steps.set-artifact-name.outputs.curr }}
@@ -123,7 +123,7 @@ jobs:
       # Re-tag images
       # ------------------------------------------------------------
       - name: "[Docker Tag] Retag"
-        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make tag VERSION=${{ matrix.VERSION }} STAGE=${{ inputs.stage }} FLAVOUR=${{ matrix.FLAVOUR }} TAG=${{ steps.tag.outputs.docker-tag }}
@@ -148,7 +148,7 @@ jobs:
       # Push images
       # ------------------------------------------------------------
       - name: Push Image
-        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make push VERSION=${{ matrix.VERSION }} STAGE=${{ inputs.stage }} FLAVOUR=${{ matrix.FLAVOUR }} ARCH=${{ matrix.ARCH }} TAG=${{ steps.tag.outputs.docker-tag }}

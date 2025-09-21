@@ -170,7 +170,7 @@ jobs:
       ###
       - name: "[Set-Output] has_refs and ref-matrix"
         id: set-refs
-        uses: john-ea/devilbox-actions/.github/actions/git-ref-matrix-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/git-ref-matrix-action@master
         with:
           repository_default_branch: ${{ steps.eval-refs.outputs.default_branch }}
           branches: ${{ steps.eval-refs.outputs.branches }}

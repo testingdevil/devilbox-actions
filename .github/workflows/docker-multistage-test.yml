@@ -77,12 +77,12 @@ jobs:
       ### Download and import previously built image
       ###
       - name: "[Artifact Load] Download previously built image"
-        uses: john-ea/devilbox-actions/.github/actions/download-artifact-retry-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/download-artifact-retry-action@master
         with:
           name: ${{ steps.set-artifact-name.outputs.curr }}
 
       - name: "[Artifact Load] Import previously built image"
-        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make load INFILE=${{ steps.set-artifact-name.outputs.curr }}
@@ -92,7 +92,7 @@ jobs:
       # Test
       # ------------------------------------------------------------
       - name: Test
-        uses: john-ea/devilbox-actions/.github/actions/shell-command-retry-action@master
+        uses: testingdevil/devilbox-actions/.github/actions/shell-command-retry-action@master
         with:
           command: |
             make test VERSION=${{ matrix.VERSION }} STAGE=${{ inputs.stage }} FLAVOUR=${{ matrix.FLAVOUR }} ARCH=${{ matrix.ARCH }}
